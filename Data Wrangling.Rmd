@@ -1,11 +1,3 @@
----
-title: "Week2 Practice Data Wrangling"
-author: "Sophie"
-date: "12/01/2020"
-output:
-  word_document: default
-  html_document: default
----
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
