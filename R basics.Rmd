@@ -1,9 +1,4 @@
----
-title: "Week1 IntroR"
-author: "Deena"
-date: "06/01/2020"
-output: html_document
----
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
