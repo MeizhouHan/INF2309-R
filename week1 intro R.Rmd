@@ -1,0 +1,398 @@
+---
+title: "Week1 IntroR"
+author: "Deena"
+date: "06/01/2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r}
+plot(pressure)
+```
+Any line of code starting with a hashtag is considered a comment
+# Installing packages needed throughout the term
+```{r}
+install.packages("tidyverse")     ## many useful packages for stats functions
+install.packages("dslabs")        ## datasets
+```
+
+# VARIABLE ASSIGNMENT
+Declare variables a=1 , b=1 , c=-1 and type results for a
+```{r}
+a <- 1       #note that the varibale shows in the environment
+b <- 1
+c <- -1
+a
+print(a)
+x     # you will get an error message as you did not define any value x
+```
+# OPERATORS and EMBEDDED FUNCTIONS
+Solve the equation ax2+bx+c=0
+Solutions are :
+(-b-√b2-4ac)/2a   and (-b+√b2-4ac)/2a 
+
+```{r}
+(-b + sqrt(b^2 - 4*a*c) ) / ( 2*a )  #note the brackets, sqrt, ^for exponents, *for multiplication
+(-b - sqrt(b^2 - 4*a*c) ) / ( 2*a )
+```
+Get help on numeric,  logical, and comparison operators
+```{r}
+?"+"  ## for help on arithmetic operators, help appears in the 4th pane
+?"<"  ## for help on relational operators
+```
+# Explore existing datasets
+```{r}
+data(package = .packages(all.available = TRUE)) ##shows all available datasets in all packages
+data()   ##shows all available datasets in package "datasets"
+data(package="dslabs")  ##shows all available datasets in package dslabs
+?data
+```
+
+# EXERCISE 1   (~7 mns)
+1. What is the sum of the first 100 positive integers? The formula for the sum of integers 1 through n is n(n+1)/2. Define n=100 and then use R to compute the sum of 1 through 100 using the formula. What is the sum?  Use the function sum(1:n) to double check your answer
+```{r}
+n <- 100
+n*(n+1)/2
+
+sum(1:100)
+```
+2. Now use the same formula to compute the sum of the integers from 1 through 1,000.
+```{r}
+n <- 1000
+n*(n+1)/2
+sum(1:1000)
+```
+3. Look at the result of typing the following code into R:
+Based on the result, what do you think the functions seq and sum do? You can use help.
+a.	sum creates a list of numbers and seq adds them up.
+b.	seq creates a list of numbers and sum adds them up.✅
+c.	seq creates a random list and sum computes the sum of 1 through 1,000.
+d.	sum always returns the same number.
+```{r}
+n <- 1000
+x <- seq(1, n)
+head(x)
+head(x, n=20L)
+sum(x)
+```
+
+# DATA TYPES
+Assign the value of 2 to a variable “a”, find its type. Assign the value of “2”  to the variable “a” and find its type. Assign b=3 and transform it to a categorical variable. 
+```{r}
+a <- 2
+class(a)
+a <-"2"
+class(a)
+b <- 3
+class(b)
+b <- as.character (b)
+class(b)
+```
+Load the “murders” dataset from the “dslabs” package and explore its type and inspect the object murders
+```{r}
+library(dslabs)
+data(murders)
+class(murders)
+str(murders) ## to inspect the different components of murders and their types
+colnames(murders)
+```
+Inspect the first rows of murders, the last rows, and explore the first rows of the population column 
+```{r}
+head(murders)  #first 6 rows
+tail(murders) #last 6 rows
+head(murders$population) #$means the name of the column
+```
+What is the type of the column region? What are the different regions?
+```{r}
+class(murders$region) #"region" is factors with 4 levels 
+levels(murders$region)
+temp <- relevel(murders$region, "West")
+levels(temp)
+```
+
+#LISTS and MATRICES
+Data frames are a special case of lists. Lists can store different types of objects
+Create a list of a student record
+```{r}
+record <- list("name" = "John Doe", "student_id" = 1234, "grades" = c(95,82,91,97,93), "final_grade"="A")
+record
+class(record)
+str(record)
+record$student_id
+```
+Matrices are like data frames but all of the same type
+Create a 4x3 matrix (4rows and 3 columns) and fill its cells with the values 1-12.
+```{r}
+mat <- matrix(1:12, 4, 3)
+mat 
+mat <- matrix(1:12, 4, 3, byrow = T) #default is bycolumn
+mat
+```
+Access the value at the 2nd row and 3rd column.
+```{r}
+mat[2, 3]
+```
+Retrieve the entire 2nd row and the entire 3rd column
+```{r}
+mat[2, ]
+mat[, 3]
+```
+Retrieve the first two rows of the 2nd and 3rd columns
+```{r}
+mat[1:2, 2:3]
+```
+# Access rows and columns of a dataframe
+Acess the 25th row of the first column in murders
+```{r}
+data(murders)
+murders[25, 1]
+```
+Access all the 2nd and 3rd rows of murders
+```{r}
+murders[2:3, ]
+```
+
+
+#EXERCISE 2  (~10 mns)
+1. Load the US murders dataset.Use the function str to examine the structure of the murders object. Use summary(murders). What is the difference between summary and str? 
+```{r}
+str(murders)
+summary(murders) #some descriptive stats
+```
+2. What are the column names used by the data frame for these five variables? What is the length of the dataset? explore nrow. Display the head of the column "state" of the dataset and explore the function length on the whole dataset and on the column. What is the difference?
+```{r}
+colnames(murders)
+nrow(murders) #number of rows
+head(murders$state)
+length(murders) #number of columns
+length(murders$state)
+```
+3. Use the accessor $ to extract the state abbreviations and assign them to the object a. What is the class of this object?
+```{r}
+a <- murders$abb
+class(a)
+```
+4. Now use the square brackets to extract the state abbreviations and assign them to the object b. Use the identical function to determine if a and b are the same.
+```{r}
+b <- murders[,2]
+identical(a,b)
+a==b
+```
+5. We saw that the region column stores a factor. You can corroborate this by typing:
+class(murders$region)
+With one line of code, use the function levels and length to determine the number of regions defined by this dataset.
+```{r}
+class(murders$region)
+length(levels(murders$region))
+```
+
+# Vectors
+```{r}
+codes <- c(380, 124, 818)
+codes
+country <- c("italy","canada","egypt")
+names(codes) <- country      #you can add names to vectors
+codes
+class(codes) #just adds labels but only showing numbers
+```
+
+# Sequences 
+```{r}
+seq(1, 10)
+seq(1,10,2)
+seq(10, 1, by= -2)
+1:10
+```
+
+# Repetitions
+```{r}
+rep("n", 5)
+rep(c("a","b","c"), c(1,2,4)) 
+```
+
+# EXERCISE 3 (~15 mns)
+1. Use the function c to create a vector with the average high temperatures in January for Beijing, Lagos, Paris, Rio de Janeiro, San Juan, and Toronto, which are 35, 88, 42, 84, 81, and 30 degrees Fahrenheit. Call the object temp.
+```{r}
+temp <- c(35, 88, 42, 84, 81, 30)
+temp
+```
+2. Now create a vector with the city names and call the object city.
+```{r}
+city <- c("Beijing", "Lagos", "Paris", "Rio de Janeiro", "San Juan", "Toronto")
+city
+```
+3. Use the names function and the objects defined in the previous exercises to associate the temperature data with its corresponding city.
+```{r}
+names(temp) <- city
+temp
+```
+4. Use the [ and : operators to access the temperature of the first three cities on the list. What is the difference between calling a cell in a vector and calling a cell in a dataframe.
+```{r}
+temp[1:3]
+murders[25,1]
+```
+5. Use the [  operator and c for vector to access the temperature of Paris and San Juan.
+```{r}
+  temp[c(3,5)]
+```
+6. Use the : operator to create a sequence of numbers 12, 13, 14, ..., 73 
+```{r}
+12:73
+```
+7. Create a vector containing all the positive odd numbers smaller than 100.
+```{r}
+seq(1,100,2)
+```
+8. Create a vector of numbers that starts at 6, does not pass 55, and adds numbers in increments of 4/7: 6, 6 + 4/7, 6 + 8/7, and so on. How many numbers does the list have? Hint: use seq and length.
+```{r}
+seq(6,55,4/7)
+length(seq(6,55,4/7))
+```
+9. What is the class of the following object a <- seq(1, 10, 0.5)?
+```{r}
+a<-seq(1,10,0.5)
+a
+class(a)
+```
+10. What is the class of the following object a <- seq(1, 10)?
+```{r}
+class(seq(1,10))
+```
+11. Define the following vector: x <- c("1", "3", "5"). What class is it? Coerce it to get integers.
+```{r}
+x<-c("1","3","5")
+class(x)
+x<-as.integer(x)
+class(x)
+```
+
+11. Use rep to create the following {"Lili", "Lili", 2,2,2, "a"}
+```{r}
+x<-c("1","3","5")
+rep(c("Lili",2,"a"),c(2,3,1))
+```
+# CONDITIONAL EXPRESSIONS
+This function gives the reciprocal of a if a is not zero. Run the code first with a=0 then run it after changing the value of a to 2
+```{r}
+a <- 0 #a<-2
+
+if(a!=0){
+  print(1/a)
+} else{
+  print("No reciprocal for 0.")
+}
+```
+Nested if statement. Run the following code, then run it after changing the value of my.age to 25 then to 75
+```{r}
+
+my.age <- 15
+
+if (my.age < 18) {
+  print("You are Not a Major.") 
+  print("You are Not Eligible to Work")
+} else {
+  if (my.age >= 18 && my.age <= 60 )  {
+    print("You are Eligible to Work")
+    print("Please fill the Application Form and Email to us")
+  } else {
+    print("As per the Government Rules, You are too Old to Work")
+    print("Please Collect your pension!")
+  }  
+}
+
+```
+Try the ifelse function
+```{r}
+a <- 0
+ifelse(a > 0, 1/a, NA)
+```
+
+# DEFINING FUNCTIONS
+Create a function that computes the mean. Mean is sum of cases/ number of cases in a vector. Check if the function you created gives the same output as the embedded "mean" function in R. 
+```{r}
+avg <- function(x){
+  s <- sum(x)
+  n <- length(x)
+  s/n
+}
+x <- 1:100
+mean(x)
+avg(x)
+identical(mean(x), avg(x))
+```
+
+# LOOPS
+Create a loop to print the numbers 1 to 10
+```{r}
+for(i in 1:10){
+  print(i)
+}
+```
+The sapply function does something similar to the for loop 
+```{r}
+x <- 1:5
+sapply(x, sqrt)
+```
+
+
+# EXERCISE 4 (~15 mns)
+1. Create a function altman_plot that takes two arguments, x and y, and plots the difference against the sum. Apply the function to the two vectors (4,2,6) and (1,5,3). 
+Use plot(sum, diff) to do the plotting. 
+```{r}
+altman_plot <-function(x,y){
+  diff<- x-y
+  sum<- x+y
+  plot(sum, diff)
+}
+altman_plot(c(4,2,6), c(1,5,3))
+```
+2. Create a vector x<- c("John", "Emily", "Sean", "John"). Create a for loop that will take the vector of names x and prints "This is John" if the name is John and "Not John" otherwise. 
+```{r}
+x<- c("John", "Emily", "Sean", "John")
+for (i in 1:length(x)){
+  ifelse(x[i]=="John", print("This is John"), print("Not John"))
+}
+```
+3.Write a function compute_squares that for any given n computes the square of the number . Run the function in a for loop from 1:10 and calculate the sum of the squares from 1:10.
+```{r}
+compute_squares <- function(n){
+  n^2
+}
+
+x=0
+for (i in 1:10){
+  x[i] <-compute_squares(i)
+}
+x
+sum(x)
+```
+4. Challenge: Write a function compute_s_n that for any given n computes and returns the sum of the squares of the numbers from 1 to n. Run the function for n=10.
+```{r}
+compute_s_n <- function(n){
+  for (i in 1:n){
+    x[i] <- i^2
+  }
+  return(sum(x))
+}
+
+compute_s_n(10)
+```
