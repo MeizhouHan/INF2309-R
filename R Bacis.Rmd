@@ -1,6 +1,6 @@
 ---
 title: "Week1 IntroR"
-author: "Deena"
+author: "Sophie"
 date: "06/01/2020"
 output:
   pdf_document: default
