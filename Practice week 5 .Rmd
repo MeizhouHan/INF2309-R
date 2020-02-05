@@ -1,0 +1,457 @@
+---
+title: "Practice Week 5"
+author: "Deena"
+date: "03/02/2020"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Import the autompg dataset from the web
+```{r}
+autompg <-  read.table(
+  "http://archive.ics.uci.edu/ml/machine-learning-databases/auto-mpg/auto-mpg.data",
+  header = FALSE, ##default
+  sep= "", ##default for empty space or tab
+  quote = "\"",  # set of quoting characters字符串分隔符
+  comment.char = "",
+  stringsAsFactors = FALSE) ##character vectors are not converted to factors
+```
+I used read.table here as the file was not a .csv or .txt
+
+Give the dataframe headers
+```{r}
+colnames(autompg) <- c("mpg", "cyl", "disp", "hp", "wt", "acc", "year", "origin", "name")
+```
+
+Remove missing data, which is stored as "?"
+```{r}
+library(dplyr)
+autompg <- filter(autompg, autompg$hp != "?") ##using dplyr
+autompg
+#autompg <- subset(autompg, autompg$hp != "?")   ##not using  dplyr
+```
+
+Remove the plymouth reliant, as it causes some issues with rownames later
+```{r}
+autompg = filter(autompg, autompg$name != "plymouth reliant")
+```
+
+Give the dataset row names, based on the engine, year and name
+```{r}
+rownames(autompg) = paste(autompg$cyl, "cylinder", autompg$year, autompg$name)
+```
+
+Remove the variable for name, as well as origin, will not use them in regression
+```{r}
+autompg <- dplyr::select(autompg, mpg, cyl, disp, hp, wt, acc, year)
+str(autompg)
+# OR autompg <-  subset(autompg, select = c("mpg", "cyl", "disp", "hp", "wt", "acc", "year"))
+```
+library dplyr makes confusion with MASS so needs to be re-stated
+
+Change horsepower from character to numeric
+```{r}
+autompg$hp = as.numeric(autompg$hp)
+```
+
+Check final structure of data
+```{r}
+str(autompg)
+```
+
+## MULTIPLE LINEAR REGRESSION
+Find regression of mpg on wt and acc
+```{r}
+mpg_model <- lm(mpg ~ wt + acc, data = autompg)
+summary(mpg_model)
+```
+see interpretation of the coefficients in the lecture notes slides 4 and 5
+
+Predict using the model
+Predict the value of mpg (Y) for two cars,  first car wt=3500 and acc=10.5, second car wt= 4000 and acc=9
+first create a dataframe of the cases
+```{r}
+new.case <- data.frame(wt=c(3500,4000), acc=c(10.5,9))
+predict(mpg_model, new.case) # first argument is the model, second argument is the dataframe to be predicted
+```
+
+## CATEGORICAL PREDICTORS 
+Upload the mtcars dataset, a built in dataset in R similar to the autompg that we imported
+```{r}
+mtcars
+?mtcars
+
+```
+
+Plot the model mpg on hp (horsepower) and am (manual or automatic)
+```{r}
+plot(mpg ~ hp, data = mtcars, cex = 2)  ##just mpg and hp
+#cex is the size of the point
+```
+
+Add am to the plot
+We here use a common R “trick” when plotting this data. 
+The am variable takes two possible values; 0 for automatic, and 1 for manual. 
+R can use numbers to represent colors, however the color for 0 is white. 
+So we take the am vector and add 1 to it. 
+Then observations with automatic transmissions are now represented by 1, which is black in R
+and manual transmission are represented by 2, which is red in R. 
+The same applies for shapes(pch), 1 is circle, 2 is triangle
+
+```{r}
+plot(mpg ~ hp, data = mtcars, col = am + 1, pch = am + 1, cex = 2)#if am=0 col=1, if am=1 col=2
+legend("topright", c("Automatic", "Manual"), col = c(1, 2), pch = c(1, 2))
+#pch: plot character形状
+```
+You can definitely use ggplot2 to draw something fancier
+
+Create a regression model of mpg on wt, hp, and amcat
+```{r}
+str(mtcars)
+amcat <- as.factor(mtcars$am)
+class(amcat)
+levels(amcat)
+mpg_model2 <- lm(mpg ~ wt + hp+ amcat , data = mtcars)
+summary(mpg_model2)
+```
+note R takes the reference category as amcat0 as it takes it in alphabetical order
+
+
+##EXERCISE 1
+Import the lung_capacity dataset from Quercus. 
+Transform the gender and smoker values to factors where
+Gender
+0: Male
+1: Female
+
+Smoker
+0: Non-Smoker
+1: Smoker
+
+Create a model to test the effect of all the variables in the model on lung capacity. In other words, lung capapcity will be the DV and the rest are the IVs
+
+
+```{r}
+setwd("~/Desktop/2309/W5")
+Lung_capacity<-read.csv('Lung_capacity.csv',header=TRUE)
+str(Lung_capacity)
+
+Lung_capacity$Gender <- as.factor(Lung_capacity$Gender)
+Lung_capacity$Smoker <- as.factor(Lung_capacity$Smoker)
+levels(Lung_capacity$Gender)
+levels(Lung_capacity$Smoker)
+levels(Lung_capacity$Gender)<-c("Male","Female")
+levels(Lung_capacity$Smoker)<-c("Smoker", "Non-Smoker")#if not releveling, R will show the 0 or 1 in the summary
+lung_model <- lm(Lung_Capacity ~ .  , data = Lung_capacity)#.represent all the independent vars
+summary(lung_model)
+```
+
+
+##MODEL DIAGNOSTICS 
+create functions to create random simulations of three models
+
+Model 1:Y=3+5x+ϵ          ϵ∼N(0,1)  linear model, Normal distribution of error 
+```{r}
+sim_1 = function(sample_size = 500) {
+  x = runif(n = sample_size) * 5
+  y = 3 + 5 * x + rnorm(n = sample_size, mean = 0, sd = 1)
+  data.frame(x, y)
+}
+```
+
+Model 2:Y=3+5x+ϵ          ϵ∼N(0,x2) linear model, non equal error variance
+```{r}
+sim_2 = function(sample_size = 500) {
+  x = runif(n = sample_size) * 5
+  y = 3 + 5 * x + rnorm(n = sample_size, mean = 0, sd = x)
+  data.frame(x, y)
+}
+```
+
+Model 3:Y=3+5x2+ϵ        ϵ∼N(0,25)  Non-linear model
+```{r}
+sim_3 = function(sample_size = 500) {
+  x = runif(n = sample_size) * 5
+  y = 3 + 5 * x ^ 2 + rnorm(n = sample_size, mean = 0, sd = 5)
+  data.frame(x, y)
+}
+```
+
+### CHECKING LINEARITY AND CONSTANT VARIANCE
+## Fitted vs Residual Plots
+
+##Model 1
+```{r}
+set.seed(42)#generate random numbers
+sim_data_1 = sim_1()
+head(sim_data_1)
+```
+
+plot the data and abline of model 1 (doesn't work for more than 2 variables)
+```{r}
+plot(y ~ x, data = sim_data_1, col = "grey", pch = 20,  main = "Data from Model 1")  ## plot data points
+fit_1 = lm(y ~ x, data = sim_data_1)    ## linear regression model
+abline(fit_1, col = "darkorange", lwd = 3)    ## plot regression line
+#lwd is the width of the line
+#if want to check the assuption using fitted vs residual, we need to run the regression model first, but cannot explain the assumption
+```
+plot fitted versus reidual plots of model 1 (Works for any number of variables in the model)
+```{r}
+plot(fitted(fit_1), resid(fit_1), col = "grey", pch = 20,
+     xlab = "Fitted", ylab = "Residuals", main = "Data from Model 1")
+abline(h = 0, col = "darkorange", lwd = 2)
+#the point of the above one is the actual point, points of this graph is residuals(fitted is the calculated y)
+```
+
+##Model 2
+```{r}
+set.seed(42)
+sim_data_2 = sim_2()
+```
+plot the data and abline of model 2
+```{r}
+fit_2 = lm(y ~ x, data = sim_data_2)
+plot(y ~ x, data = sim_data_2, col = "grey", pch = 20,
+     main = "Data from Model 2")
+abline(fit_2, col = "darkorange", lwd = 3)
+
+```
+plot fitted versus reidual plots of model 2
+```{r}
+plot(fitted(fit_2), resid(fit_2), col = "grey", pch = 20,
+     xlab = "Fitted", ylab = "Residuals", main = "Data from Model 2")
+abline(h = 0, col = "darkorange", lwd = 2)
+```
+The model is linear (average residuals= 0, almost mirror image around orange line)
+The model does not have constant variance. Residuals follow pattern and are not random. 
+
+##Model 3
+```{r}
+set.seed(42)
+sim_data_3 = sim_3()
+```
+plot the data and abline of model 3
+```{r}
+fit_3 = lm(y ~ x, data = sim_data_3)
+plot(y ~ x, data = sim_data_3, col = "grey", pch = 20,
+     main = "Data from Model 3")
+abline(fit_3, col = "darkorange", lwd = 3)
+```
+plot fitted versus reidual plots of model 3
+```{r}
+plot(fitted(fit_3), resid(fit_3), col = "grey", pch = 20,
+     xlab = "Fitted", ylab = "Residuals", main = "Data from Model 3")
+abline(h = 0, col = "darkorange", lwd = 2)
+```
+Model is not linear as average residuals is not 0 (no mirror image from 2 sides of orange line)
+
+## Breusch-Pagan test for homoscedasticity
+```{r}
+#install.packages("lmtest")
+library(lmtest)
+```
+
+Try on our three models
+The test is applied directly on the model, not the residuals
+```{r}
+bptest(fit_1)  #p >0.05, H0 not rejected, constant variance
+bptest(fit_2)  #p <0.05,  H0 rejected, no constant variance
+bptest(fit_3)  #p >0.05, H0 not rejected, constant variance
+#the creator already include the residual in the bptest() function
+```
+fit_1 had no violation of assumptions,
+fit_2 violated the constant variance assumption, but not linearity,
+fit_3 violated linearity, but not constant variance.
+
+
+## CHECKING NORMALITY
+##histograms
+```{r}
+par(mfrow = c(1, 3))
+hist(resid(fit_1),
+     xlab   = "Residuals",
+     main   = "Histogram of Residuals, fit_1",
+     col    = "darkorange",
+     border = "dodgerblue",
+     breaks = 20)
+hist(resid(fit_2),
+     xlab   = "Residuals",
+     main   = "Histogram of Residuals, fit_2",
+     col    = "darkorange",
+     border = "dodgerblue",
+     breaks = 20)
+hist(resid(fit_3),
+     xlab   = "Residuals",
+     main   = "Histogram of Residuals, fit_3",
+     col    = "darkorange",
+     border = "dodgerblue",
+     breaks = 20)
+```
+
+### QQ plots
+QQ plots for the residuals of model 1
+Make sure you apply Q-Qnorm on the residuals
+```{r}
+qqnorm(resid(fit_1), main = "Normal Q-Q Plot, fit_1", col = "darkgrey")
+qqline(resid(fit_1), col = "dodgerblue", lwd = 2)
+#on residual bec wanna see the normality of residuals
+```
+
+QQ plots for the residuals of model 2
+```{r}
+qqnorm(resid(fit_2), main = "Normal Q-Q Plot, fit_2", col = "darkgrey")
+qqline(resid(fit_2), col = "dodgerblue", lwd = 2)
+```
+
+QQ plots for the residuals of model 3
+```{r}
+qqnorm(resid(fit_3), main = "Normal Q-Q Plot, fit_3", col = "darkgrey")
+qqline(resid(fit_3), col = "dodgerblue", lwd = 2)
+```
+
+## Shapiro-test for normality
+test is applied on the residuals
+```{r}
+shapiro.test(resid(fit_1))    ## p>0.05, residuals are normally distributed
+shapiro.test(resid(fit_2))    ## p<0.05, residuals are not normally distributed
+shapiro.test(resid(fit_3))    ## p<0.05, residuals are not normally distributed
+```
+
+You can also get many plots at once by using plot(modelname)
+```{r}
+plot(fit_1)
+#1st and 3rd can be used for checking homoscedasticity
+#4th anything below 3 or above 3 would be outlier
+
+```
+the first plot is fitted vs residuals plot, look for red line horizontal at 0, and points are making a mirror image (linearity) and not following a pattern (homoscedsticity). 
+the second plot is Q_Q plot,the normal probability plot of residuals should approximately follow a straight line.
+the third plot (Scale-Location) also shows homoscedasticity, we are looking for a horizontal line with equal spread of points
+the fourth plot (Residuals vs leverage) shows outliers (points beyond absolute value of standardized residuals of 3) and influential points (points beyond Cook's distance, red dashed lines)
+
+
+Since there are 4 plots, you can call each plot independently
+```{r}
+plot(fit_1,1) # plots the fitted vs residuals only 
+plot(fit_1,3) # plots the Scale-location plot only
+plot(fit_1,5) #plots the residual vs leverage, note it's 5 not 4
+```
+
+```{r}
+plot(fit_2)
+```
+
+```{r}
+plot(fit_3) 
+```
+
+## EXERCISE 2
+1. Fit a regression model of mtcars data with mpg as the response and hp and am as predictors
+Interpret the coefficients
+```{r}
+model <- lm(mpg ~ hp+am  , data = mtcars)
+summary(model)
+```
+
+2. Plot the model and check for linearity
+```{r}
+plot(model,1)
+#non-linear
+```
+
+
+3. Check for homoscedsticity, and use an appropriate test to confirm your answer
+```{r}
+plot(model,3)
+#non-constant variance
+bptest(model)#p<0.05
+```
+
+
+4. Check for normality using appropriate plot and test 
+```{r}
+plot(model,2)
+#normal
+shapiro.test(resid(model)) #p>0.05 not reject, normal
+```
+
+5. Are there any outliers or influential points?
+```{r}
+plot(model,5)
+```
+##################
+
+## LOGISTIC REGRESSION
+For this example, we will use the SAheart dataset from the ElemStatLearn package.
+It's a dataset of a sample of males in a heart-disease high-risk region of the Western Cape, South Africa.
+```{r}
+install.packages("ElemStatLearn")
+library(ElemStatLearn)
+data("SAheart")
+? SAheart
+```
+The chd variable, which we will use as a response, indicates whether or not coronary heart disease is present in an individual.
+Explore the dataset to check whether the response variable is in categorical format
+```{r}
+str(SAheart)
+summary(SAheart)
+SAheart$chd <- as.factor(SAheart$chd)
+summary(SAheart)
+```
+Regression model
+```{r}
+chd_mod = glm(chd ~ ., data = SAheart, family = binomial)
+summary(chd_mod)
+```
+see interpretation of the coefficients on slide 32 in lecture notes
+
+
+##EXERCISE 3
+
+1. use the BreastCancer dataset in mlbench package. Remove rows with any missing variables
+hint : dataset[complete.cases(dataset), ] gives only complete cases with no missing
+```{r}
+
+```
+
+
+2. remove the Id column
+```{r}
+
+```
+
+
+3. Build a for loop to transform all factor variables into numeric (except Class which will be used as response)
+hint: transform the factor first to character then to numeric
+```{r}
+
+```
+
+4. Build a logistic regression model of class as the response variable and Cl.thickness, Cell.size, and Cell.shape as IVs 
+Interpret the coefficients
+```{r}
+
+```
+
+
+
+
+
+
+
+
