@@ -1,6 +1,6 @@
 ---
-title: "Practice Week 5"
-author: "Deena"
+title: "MULTIPLE LINEAR REGRESSION"
+author: "Sophie"
 date: "03/02/2020"
 output:
   word_document: default
